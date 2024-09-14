@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <style>
+        .form{
+            visibility: hidden;
+        }
+        .flex{
+            display: flex;
+            justify-content: center;
+            align-items:center;
+            margin-top: 20%;
+            /* justify-content:space-evenly; */
+        }
+        .button{
+            width: 200px;
+            height: 100px;
+            background-color: darkcyan;
+            color:#fff;
+            border-radius: 10px;
+            font-size: large;
+            font-weight: 700;
+            
+        }
+    </style>
+    <div class="flex">
+    <form action='/login' method="GET">
+        <button class="button">Login<button>
+    </form>
+
+    <form action='/register' method="GET">
+        <button class="button">Register<button>
+    </form>
+  </div>
+</body>
+</html>

@@ -97,7 +97,7 @@ const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT));
 
   // const userDb = await userObj.save() // to save into the database
    
-   return res.redirect("/dashboard");
+   return res.redirect("/login");
 
 } catch (error) {
     console.log(error);

@@ -7,8 +7,8 @@ const express = require("express");
 
  
  //file-importS
- const userModel = require("./models/userModels");
- const { userDataValidation, isEmailvalidate } = require("./utils/authUtils");
+const userModel = require("./models/userModels");
+const { userDataValidation, isEmailvalidate } = require("./utils/authUtils");
 const isAuth = require("./middlewares/isAuthMiddleware");
 const { todoDataValidation } = require("./utils/todoUtils");
 const todoModel = require("./models/todoModel");
@@ -70,14 +70,14 @@ app.post("/register", async (req, res) => {
     try {
 
     // check email exist or not
-   const userEmailExist = await userModel.findOne({email});
+   const userEmailExist = await userModel.findOne({ email });
 
    if(userEmailExist)
    {
     return res.status(400).json("Email already exist");
    }
 
-   const userUsernameExist = await userModel.findOne({ username});
+   const userUsernameExist = await userModel.findOne({ username });
    
    if(userUsernameExist)
     {
@@ -85,7 +85,10 @@ app.post("/register", async (req, res) => {
      }
 
 //hash  the password
-const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT));
+const hashedPassword = await bcrypt.hash(
+    password, 
+    Number(process.env.SALT)
+);
 
     const userObj = new userModel({
     // schema : client
@@ -95,7 +98,7 @@ const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT));
     password: hashedPassword,
 });
 
-  // const userDb = await userObj.save() // to save into the database
+   const userDb = await userObj.save() // to save into the database
    
    return res.redirect("/login");
 
@@ -103,7 +106,7 @@ const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT));
     console.log(error);
     return res
     .status(500)
-    .json({ message: "Internal server error", error: error});    
+    .json({ message: "Internal server error", error: error });    
 }   
  });
     
@@ -115,10 +118,11 @@ app.get("/login", (req, res) => {
 app.post("/login", async (req, res) => {
     console.log(req.body);
 
-    const {loginId, password} = req.body;
+    const { loginId, password } = req.body;
 
 // data validation
-    if(!loginId || !password) return res.status(400).json("Missing LoginId/Password");
+    if(!loginId || !password)  
+       return res.status(400).json("Missing LoginId/Password");
 
     if(typeof loginId !== "string") 
        return res.status(400).json("Login id is not a text");
@@ -130,20 +134,20 @@ app.post("/login", async (req, res) => {
 try {
     let userDb = {};
     //Find the user base on loginId
-if(isEmailvalidate({key: loginId})){
-    userDb = await userModel.findOne({ email: loginId});
-}else{
-    userDb = await userModel.findOne({ username: loginId});
-}
+    if(isEmailvalidate({ key: loginId })){
+    userDb = await userModel.findOne({ email: loginId });
+    }else{
+    userDb = await userModel.findOne({ username: loginId });
+    }
 
-if(!userDb){
+    if(!userDb){
     return res.status(400).json("User not found, please register first");
-}
+    }
 
-// & compare the password
-const isMatch = await bcrypt.compare(password, userDb.password);
+   // & compare the password
+   const isMatch = await bcrypt.compare(password, userDb.password);
 
-if(!isMatch){
+    if(!isMatch){
     return res.status(400).json("Incorrect password");
 }
 
@@ -152,12 +156,13 @@ req.session.isAuth = true
 req.session.user = {
     userId: userDb._id,
     username: userDb.username,
-    email:userDb.email,
+    email: userDb.email,
 };
 
 return res.redirect("/dashboard");
 } catch (error) {
-    return res.status(500).json({ message: "Internal server error", error: error  });
+    return res.status(500)
+    .json({ message: "Internal server error", error: error  });
 }
 });
 
@@ -182,28 +187,32 @@ app.post("/logout", isAuth, (req, res) => {
 
 app.post('/logout-out-from-all', isAuth, async (req, res) => {
     console.log(req.session);
-    const username = req.session.user.username
+    const username = req.session.user.username;
    //schema
     const sessionSchema = new mongoose.Schema({ _id : String }, {strict : false});
    // model
     const sessionModel = mongoose.model("session", sessionSchema);
 
     try {
-        const deleteDb = await sessionModel.deleteMany({"session.user.username": username,});
+        const deleteDb = await sessionModel.deleteMany({
+            "session.user.username": username,
+        });
+
         console.log(deleteDb);
-        return res.status(200).json("Logout from all devices"); 
+
+        return res.status(200).json(`Logout from ${deleteDb.deletedCount} devices successfully`); 
     } catch (error) {
         return res.status(500).json(error);
     }
     
     //model.deleteMany({ username : req.session.user.username}) 
     //if you want to delete multiple entries
-    return res.send("all  ok");
 });
 
 //TODO's API
 app.post("/create-item", isAuth, rateLimiting, async (req, res) => {
     console.log(req.body);
+
     const todo = req.body.todo;
     const username = req.session.user.username;
 
@@ -248,6 +257,7 @@ app.get('/read-item', isAuth, async (req, res) => {
 
     try {
         // const todoDb = await todoModel.find({ username});
+
          const todoDb = await todoModel.aggregate([[
             //pagination, match
             {
@@ -260,8 +270,6 @@ app.get('/read-item', isAuth, async (req, res) => {
                 $limit: 5,
             },
          ]]);
-
-        console.log(todoDb);
         
         if (todoDb.length === 0) {
             return res.send({
@@ -301,10 +309,10 @@ app.post('/edit-item', isAuth, async (req, res) => {
 
 //find the todo
   try {
-    const todoDb = await todoModel.findOne({_id : todoId });
+    const todoDb = await todoModel.findOne({ _id : todoId });
 
     if(!todoDb) {
-        return res.send({ status: 400, message: "ToDo not found."});
+        return res.send({ status: 400, message: "Todo not found."});
     }
     console.log(todoDb.username, usernameReq);
      // check the ownership
@@ -317,8 +325,8 @@ app.post('/edit-item', isAuth, async (req, res) => {
   
    //edit the to do
    const todoDbPrev = await todoModel.findOneAndUpdate(
-    { _id : todoId}, 
-    {todo : newData}
+    { _id : todoId }, 
+    { todo : newData }
 );
 
    return res.send({
@@ -333,7 +341,6 @@ app.post('/edit-item', isAuth, async (req, res) => {
         error: error,
     });
   }
-
    //todoModel.Query({todo : newData})
   //todoModel.findOneAndUpdate({_id : todoId}, {todo : newData})
  //todoModel.updateOne({_id : todoId}, {todo : newData})
@@ -350,6 +357,7 @@ app.post('/delete-item', isAuth, async (req, res) => {
       if(!todoDb) {
           return res.send({ status: 400, message: "ToDo not found."});
       }
+
       console.log(todoDb.username, usernameReq);
        // check the ownership
       if (todoDb.username !== usernameReq){
@@ -383,9 +391,9 @@ app.post('/delete-item', isAuth, async (req, res) => {
   });
 
 app.listen(PORT, () => {
-    console.log(`Server is Running at: http://localhost:${8000}`);
+    console.log(`Server is Running at: http://localhost:${PORT}`);
 })
 
 
-// session
+// session.
 //global middlewares, initialise the session (req.sesstion)
